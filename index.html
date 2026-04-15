@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ProductOS</title>
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -855,7 +856,7 @@ html, body {
 .idle-ps { color: var(--muted); }
 .idle-arr { color: var(--muted2); }
 
-/* ── Config strip ─────────────────────────────────────────────── */
+/* ── Config strip ────────────────────────���────────────────────── */
 .idle-config-strip {
   width: 100%;
   margin-top: 28px;
@@ -2452,7 +2453,7 @@ async function loadSession(sid) {
   } catch { toast('Failed to load session'); }
 }
 
-// ── Keyboard ──────────────────────────────────────────────────────────────────
+// ── Keyboard ──────���───────────────────────────────────────────────────────────
 document.getElementById('idea-input').addEventListener('keydown', e => {
   if (e.key==='Enter') { e.preventDefault(); startAnalysis(); }
 });
