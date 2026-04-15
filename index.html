@@ -1387,18 +1387,87 @@ html, body {
 /* ═══════════════════════════════════════════════
    MOBILE
 ═══════════════════════════════════════════════ */
+/* Panel chevron — hidden on desktop */
+.panel-chevron {
+  display: none;
+  font-size: 11px;
+  color: var(--muted2);
+  transition: transform 0.2s;
+  padding-left: 4px;
+}
+
 @media (max-width: 768px) {
   html, body { overflow: auto; height: auto; }
-  #app { height: auto; min-height: 100vh; }
-  #agent-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, minmax(300px, auto));
-  }
-  #workspace { overflow-y: auto; flex: none; }
-  .panel:nth-child(2n) { border-right: none; }
-  .panel:nth-child(n+3) { border-bottom: 1px solid var(--border); }
+  #app { height: auto; min-height: 100svh; }
+
+  /* ── Topbar ── */
+  #topbar { padding: 0 12px; gap: 8px; height: 46px; }
+  .logo-name, .divider { display: none; }
+  #idea-input { font-size: 13px; }
+
+  /* ── Pipeline bar: scrollable, compact ── */
+  #pipeline-bar { padding: 0 10px; overflow-x: auto; height: 34px; }
+  #pipeline-bar::-webkit-scrollbar { height: 0; }
+  .pipe-step { padding: 0 5px; gap: 4px; }
+  .pipe-artifact { display: none; }
+  .pipe-connector { width: 14px; }
+  .pipe-label { font-size: 9px; letter-spacing: 0.02em; }
+  #session-id { display: none !important; }
+
+  /* ── Grid: single column, no fixed row heights ── */
+  #workspace { overflow-y: visible; flex: none; }
+  #agent-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+
+  /* ── Panels ── */
+  .panel { border-right: none; border-bottom: 1px solid var(--border); }
   .panel:last-child { border-bottom: none; }
-  .logo-name { display: none; }
+  .panel:nth-child(n+3) { border-bottom: 1px solid var(--border); }
+  .panel-hd { height: 44px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .panel-chevron { display: flex; }
+
+  /* Collapsed: just the header */
+  .panel.collapsed .panel-bd,
+  .panel.collapsed .panel-ft { display: none !important; }
+  .panel.collapsed .panel-chevron { transform: rotate(-90deg); }
+
+  /* Panel body min-height when expanded */
+  .panel-bd { min-height: 160px; }
+  .panel-content { font-size: 10.5px; padding: 10px; line-height: 1.65; }
+
+  /* ── Bottom bar: sticky so it's always reachable ── */
+  #bottom-bar.open {
+    height: auto;
+    position: sticky;
+    bottom: 0;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 14px 14px;
+    gap: 8px;
+    z-index: 50;
+    border-top: 1px solid var(--border2);
+  }
+  .bb-label { font-size: 9px; justify-content: center; }
+  .bb-actions { gap: 6px; }
+  .bb-btn { flex: 1; text-align: center; font-size: 9px; padding: 9px 6px; }
+
+  /* ── Clarify screen ── */
+  .clar-wrap { padding: 20px 16px 32px; }
+  .clar-q-label { font-size: 13px; }
+  .clar-opts { gap: 6px; }
+  .clar-opt { min-width: calc(50% - 4px); padding: 10px 10px; flex: 1; }
+
+  /* ── Config strip ── */
+  .cfg-tabs { overflow-x: auto; }
+  .cfg-tab { flex-shrink: 0; }
+
+  /* ── Modals full-width ── */
+  #gh-modal { width: calc(100vw - 24px); max-width: none; }
+  #hist-panel { width: 100vw; }
+
+  /* ── Idle screen ── */
+  .idle-center { padding: 0 16px; }
+  .idle-brand { font-size: 24px; }
+  .idle-quote { font-size: 13px; }
 }
 
 </style>
@@ -1703,6 +1772,7 @@ html, body {
             <span class="panel-sdot"></span>
             <span class="panel-stxt">WAITING</span>
           </div>
+          <span class="panel-chevron">▾</span>
         </div>
       </div>
       <div class="panel-bd">
@@ -1728,6 +1798,7 @@ html, body {
             <span class="panel-sdot"></span>
             <span class="panel-stxt">WAITING</span>
           </div>
+          <span class="panel-chevron">▾</span>
         </div>
       </div>
       <div class="panel-bd">
@@ -1753,6 +1824,7 @@ html, body {
             <span class="panel-sdot"></span>
             <span class="panel-stxt">WAITING</span>
           </div>
+          <span class="panel-chevron">▾</span>
         </div>
       </div>
       <div class="panel-bd">
@@ -1778,6 +1850,7 @@ html, body {
             <span class="panel-sdot"></span>
             <span class="panel-stxt">WAITING</span>
           </div>
+          <span class="panel-chevron">▾</span>
         </div>
       </div>
       <div class="panel-bd">
@@ -1916,7 +1989,7 @@ function setStatus(role, txt) {
 function activatePanel(role) {
   const p = $panel(role);
   if (!p) return;
-  p.classList.remove('done'); p.classList.add('active');
+  p.classList.remove('done', 'collapsed'); p.classList.add('active');
   setStatus(role, 'THINKING');
 }
 
@@ -2243,6 +2316,7 @@ function onSSE(event) {
       setPipe(d.role,'active');
       const c = $content(d.role);
       if (c) { const cur=document.createElement('span'); cur.className='cursor'; c.appendChild(cur); }
+      scrollToPanel(d.role);
       break;
     }
     case 'token':
@@ -2507,6 +2581,25 @@ async function pushToGitHub() {
 }
 
 // Init
+// ── Mobile: tap panel header to collapse/expand ──────────────────────────────
+function isMobile() { return window.innerWidth <= 768; }
+
+document.querySelectorAll('.panel-hd').forEach(hd => {
+  hd.addEventListener('click', () => {
+    if (!isMobile()) return;
+    const panel = hd.closest('.panel');
+    if (panel.classList.contains('active')) return; // never collapse while streaming
+    panel.classList.toggle('collapsed');
+  });
+});
+
+// ── Mobile: auto-scroll to the panel that just became active ─────────────────
+function scrollToPanel(role) {
+  if (!isMobile()) return;
+  const panel = document.getElementById(`panel-${role}`);
+  if (panel) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
 loadCfg();
 document.getElementById('idle-idea').focus();
 </script>
