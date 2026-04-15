@@ -1459,6 +1459,7 @@ html, body {
           <span class="cfg-label">API Key</span>
           <input class="cfg-key-input" id="cfg-key" type="password" placeholder="Paste your API key here…" autocomplete="off" />
         </div>
+        <div id="cfg-key-error" style="display:none;font-size:10px;color:#f87171;font-family:var(--mono);margin:-6px 0 4px 80px;"></div>
         <div class="cfg-key-hint" id="cfg-key-hint">
           Get your key at
           <a id="cfg-key-link" href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
@@ -2003,10 +2004,37 @@ function loadCfg() {
   refreshCfgStatus();
 }
 
+function clearKeyError() {
+  const err = document.getElementById('cfg-key-error');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
+}
+
 function saveCfg() {
   const rawKey = document.getElementById('cfg-key').value.trim();
-  if (rawKey && !rawKey.startsWith('●')) cfg.key = rawKey;
-  cfg.provider = document.querySelector('.cfg-tab.on').dataset.p;
+  const p      = document.querySelector('.cfg-tab.on').dataset.p;
+
+  if (p !== 'ollama') {
+    if (rawKey && !rawKey.startsWith('●')) {
+      // Validate key format before accepting
+      const valid = (p === 'anthropic' && rawKey.startsWith('sk-ant-'))
+                 || (p === 'openai'    && rawKey.startsWith('sk-'));
+      if (!valid) {
+        const err = document.getElementById('cfg-key-error');
+        err.textContent = p === 'anthropic'
+          ? '✗ Anthropic keys must start with  sk-ant-'
+          : '✗ OpenAI keys must start with  sk-';
+        err.style.display = 'block';
+        return;  // do not save
+      }
+      cfg.key = rawKey;
+    } else if (!rawKey) {
+      cfg.key = '';  // user cleared the field — wipe the saved key
+    }
+    // rawKey === dots → field untouched, keep existing cfg.key
+  }
+
+  clearKeyError();
+  cfg.provider = p;
   cfg.model    = document.getElementById('cfg-model').value;
   localStorage.setItem('pos_cfg', JSON.stringify(cfg));
   refreshCfgStatus();
@@ -2037,6 +2065,7 @@ function selectProvider(p, reset = true) {
     const rec = document.getElementById('cfg-key-rec');
     rec.textContent  = p==='anthropic' ? 'Recommended for best results · ' : '';
     rec.style.color  = p==='anthropic' ? 'var(--pm)' : '';
+    clearKeyError();
   }
 }
 
