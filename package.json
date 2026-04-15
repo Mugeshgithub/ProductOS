@@ -1,0 +1,23 @@
+{
+  "name": "primary",
+  "version": "1.0.0",
+  "description": "ProductOS turns a one-line product idea into a full engineering plan in under two minutes. Four AI agents run in sequence, each building on the previous one's output, streamed live to the browser.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mugeshgithub/ProductOS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mugeshgithub/ProductOS/issues"
+  },
+  "homepage": "https://github.com/Mugeshgithub/ProductOS#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
