@@ -92,13 +92,25 @@ class Agent:
             raise
         yield {'type': 'agent_done', 'role': self.role, 'content': full}
 
+    def _is_reasoning_model(self) -> bool:
+        """o1, o3, o4-mini etc. use max_completion_tokens and developer role."""
+        import re
+        return bool(re.match(r'^o\d', self.model))
+
     def _stream_openai(self, user_msg: str) -> Iterator[dict]:
-        full = ''
+        full    = ''
+        is_reas = self._is_reasoning_model()
+
+        # Reasoning models: 'developer' role instead of 'system',
+        #                   'max_completion_tokens' instead of 'max_tokens'
+        sys_role   = 'developer' if is_reas else 'system'
+        token_key  = 'max_completion_tokens' if is_reas else 'max_tokens'
+
         stream = self.client.chat.completions.create(
             model=self.model,
-            max_tokens=self.meta['max_tokens'],
+            **{token_key: self.meta['max_tokens']},
             messages=[
-                {'role': 'system', 'content': self.system},
+                {'role': sys_role, 'content': self.system},
                 {'role': 'user',   'content': user_msg}
             ],
             stream=True
