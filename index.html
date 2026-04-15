@@ -1826,6 +1826,7 @@ html, body {
       </span>
     </div>
     <div class="gh-progress" id="gh-progress">Pushing…</div>
+    <div id="gh-error" style="display:none;font-size:11px;color:#f87171;font-family:var(--mono);margin:8px 0 0;padding:8px 10px;background:rgba(248,113,113,0.08);border-radius:6px;line-height:1.5;"></div>
     <div class="gh-actions">
       <button class="gh-btn" onclick="closeGhModal()">Cancel</button>
       <button class="gh-btn p" id="gh-push-btn" onclick="pushToGitHub()">Push →</button>
@@ -2398,20 +2399,35 @@ function closeGhModal(e) {
   document.getElementById('gh-modal-overlay').classList.remove('on');
 }
 
+function ghError(msg) {
+  const el = document.getElementById('gh-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
 async function pushToGitHub() {
   const repoInput  = document.getElementById('gh-repo').value.trim();
   const tokenInput = document.getElementById('gh-token').value.trim();
+  document.getElementById('gh-error').style.display = 'none';
 
   // Resolve token (may be masked from saved value)
   const saved = JSON.parse(localStorage.getItem('pos_gh') || '{}');
   const token = tokenInput.startsWith('●') ? saved.token : tokenInput;
-  if (!token) { toast('Paste a GitHub token first'); return; }
+  if (!token) { ghError('Paste your Personal Access Token first (ghp_…)'); return; }
 
   // Parse owner/repo from URL
   const match = repoInput.match(/github\.com[/:]([^/]+)\/([^/\s]+)/);
-  if (!match) { toast('Invalid GitHub URL'); return; }
+  if (!match) { ghError('Invalid GitHub URL — use https://github.com/username/repo'); return; }
   const owner = match[1];
   const repo  = match[2].replace(/\.git$/, '');
+
+  // Check there is something to push
+  const ARTIFACT_FILES = {
+    pm: 'PRD.md', system_architect: 'HLD.md',
+    software_architect: 'LLD.md', launch_engineer: 'Plan.md',
+  };
+  const hasContent = Object.keys(ARTIFACT_FILES).some(r => state.artifacts[r] || state.rawText[r]);
+  if (!hasContent) { ghError('No output to push yet — run the pipeline first'); return; }
 
   // Save for next time
   localStorage.setItem('pos_gh', JSON.stringify({ repo: repoInput, token }));
@@ -2421,14 +2437,9 @@ async function pushToGitHub() {
   btn.disabled = true;
   progress.classList.add('on');
 
-  const ARTIFACT_FILES = {
-    'pm':                 'PRD.md',
-    'system_architect':   'HLD.md',
-    'software_architect': 'LLD.md',
-    'launch_engineer':    'Plan.md',
-  };
+  let pushed = 0;
+  const errors = [];
 
-  let pushed = 0, failed = 0;
   for (const [role, filename] of Object.entries(ARTIFACT_FILES)) {
     const content = state.artifacts[role] || state.rawText[role];
     if (!content) continue;
@@ -2436,15 +2447,22 @@ async function pushToGitHub() {
     progress.textContent = `Pushing ${filename}…`;
 
     try {
-      // Check if file exists (need SHA to update)
+      // Check if file exists — need its SHA to update
       let sha = null;
       const checkRes = await fetch(
         `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`,
-        { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } }
+        { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
       );
       if (checkRes.ok) {
-        const existing = await checkRes.json();
-        sha = existing.sha;
+        sha = (await checkRes.json()).sha;
+      } else if (checkRes.status === 401) {
+        errors.push('Token rejected (401) — check it has public_repo or repo scope');
+        break;
+      } else if (checkRes.status === 404 && checkRes.url.includes('/contents/')) {
+        // File doesn't exist yet — that's fine, we'll create it
+      } else if (checkRes.status === 404) {
+        errors.push(`Repo not found: ${owner}/${repo} — check the URL and that the repo exists`);
+        break;
       }
 
       const body = {
@@ -2458,34 +2476,33 @@ async function pushToGitHub() {
         {
           method: 'PUT',
           headers: {
-            'Authorization': `token ${token}`,
+            Authorization: `token ${token}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
+            Accept: 'application/vnd.github.v3+json',
           },
           body: JSON.stringify(body),
         }
       );
 
-      if (pushRes.ok) pushed++;
-      else {
+      if (pushRes.ok) {
+        pushed++;
+      } else {
         const err = await pushRes.json();
-        console.error(`Failed ${filename}:`, err.message);
-        failed++;
+        errors.push(`${filename}: ${err.message}`);
       }
     } catch (e) {
-      console.error(`Error pushing ${filename}:`, e);
-      failed++;
+      errors.push(`${filename}: network error — ${e.message}`);
     }
   }
 
   btn.disabled = false;
   progress.classList.remove('on');
 
-  if (failed === 0) {
-    toast(`Pushed ${pushed} files to ${owner}/${repo}`);
-    closeGhModal();
+  if (errors.length) {
+    ghError(errors.join('\n'));
   } else {
-    toast(`${pushed} pushed, ${failed} failed — check token & repo name`);
+    toast(`Pushed ${pushed} files to ${owner}/${repo} ✓`);
+    closeGhModal();
   }
 }
 
