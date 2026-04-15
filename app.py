@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE    = Path(__file__).parent
-DB_PATH = BASE / 'sessions.db'
+# /tmp is the only writable directory on serverless platforms (Vercel, etc.)
+DB_PATH = Path('/tmp/sessions.db') if os.getenv('VERCEL') else BASE / 'sessions.db'
 
 app = Flask(__name__, static_folder=str(BASE))
 CORS(app)
