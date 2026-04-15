@@ -1,0 +1,39 @@
+# Environment
+.env
+.env.*
+
+# Database
+sessions.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Personal output files
+*.result.md
+clearfria_anthropic_result.md
+chatgpt_result*.md
+productos_a6593de3*.md
+
+# Logs
+*.log

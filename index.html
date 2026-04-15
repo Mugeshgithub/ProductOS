@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProductOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #08080D;
+  --panel:   #0B0B12;
+  --border:  #161622;
+  --border2: #1E1E2E;
+  --text:    #DCDCF0;
+  --muted:   #42425C;
+  --muted2:  #28283C;
+  --pm:      #FB923C;
+  --sa:      #2DD4BF;
+  --sw:      #A78BFA;
+  --prog:    #4ADE80;
+  --font:    'Space Grotesk', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════
+   LAYOUT — always fixed, no page scroll
+═══════════════════════════════════════════════ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   TOPBAR — 52px
+═══════════════════════════════════════════════ */
+#topbar {
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.logo-grid {
+  width: 18px; height: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+
+.logo-grid span { display: block; }
+.logo-grid span:nth-child(1) { background: var(--pm); }
+.logo-grid span:nth-child(2) { background: var(--sa); }
+.logo-grid span:nth-child(3) { background: var(--sw); }
+.logo-grid span:nth-child(4) { background: var(--prog); }
+
+.logo-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+.logo-name em { color: var(--muted); font-style: normal; font-weight: 400; }
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border2);
+  flex-shrink: 0;
+}
+
+/* Input area */
+#input-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#idea-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 400;
+  padding: 5px 2px;
+  outline: none;
+  transition: border-color 0.2s;
+  caret-color: var(--prog);
+}
+#idea-input::placeholder { color: var(--muted); }
+#idea-input:focus { border-bottom-color: var(--muted); }
+
+#build-btn {
+  height: 30px;
+  padding: 0 16px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, opacity 0.2s;
+}
+#build-btn:hover { background: #fff; }
+#build-btn:active { opacity: 0.75; }
+#build-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+#history-btn {
+  width: 30px; height: 30px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+#history-btn:hover { color: var(--text); border-color: var(--muted); }
+
+/* ═══════════════════════════════════════════════
+   PIPELINE BAR — 40px
+═══════════════════════════════════════════════ */
+#pipeline-bar {
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  gap: 0;
+}
+
+.pipe-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  cursor: default;
+  flex-shrink: 0;
+}
+.pipe-step:first-child { padding-left: 0; }
+
+.pipe-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted2);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+
+.pipe-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--muted2);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.pipe-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.pipe-artifact {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted2);
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border: 1px solid var(--border2);
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.pipe-connector {
+  height: 1px;
+  width: 28px;
+  background: var(--border2);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.pipe-connector::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  transition: width 0.6s ease;
+  background: var(--done-color, var(--muted));
+}
+
+/* Step states */
+.pipe-step.active .pipe-num   { color: var(--step-color); }
+.pipe-step.active .pipe-dot   { background: var(--step-color); animation: blink-dot 1s ease-in-out infinite; }
+.pipe-step.active .pipe-label { color: var(--step-color); }
+.pipe-step.active .pipe-artifact { border-color: var(--step-color); color: var(--step-color); }
+
+.pipe-step.done .pipe-num   { color: var(--text); }
+.pipe-step.done .pipe-dot   { background: var(--step-color); }
+.pipe-step.done .pipe-label { color: var(--text); }
+.pipe-step.done .pipe-artifact { border-color: var(--step-color); color: var(--step-color); }
+
+.pipe-step.done + .pipe-connector::after {
+  width: 100%;
+  background: var(--step-color);
+}
+
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Right side meta */
+#pipe-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+#session-id {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted2);
+  letter-spacing: 0.06em;
+  display: none;
+}
+
+#run-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#run-status .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--muted2);
+  transition: background 0.3s;
+}
+
+#run-status.running { color: var(--prog); }
+#run-status.running .dot { background: var(--prog); animation: blink-dot 1s ease-in-out infinite; }
+#run-status.done { color: var(--prog); }
+#run-status.done .dot { background: var(--prog); }
+#run-status.error { color: #F87171; }
+#run-status.error .dot { background: #F87171; }
+
+/* ═══════════════════════════════════════════════
+   ERROR BANNER
+═══════════════════════════════════════════════ */
+#error-banner {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  background: rgba(248,113,113,0.07);
+  border-bottom: 1px solid rgba(248,113,113,0.25);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: #F87171;
+  letter-spacing: 0.03em;
+}
+#error-banner.visible { display: flex; }
+#error-dismiss {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #F87171;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+  line-height: 1;
+}
+#error-dismiss:hover { opacity: 1; }
+
+/* ═══════════════════════════════════════════════
+   WORKSPACE — fills everything remaining
+═══════════════════════════════════════════════ */
+#workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   AGENT GRID — 2×2, fills workspace
+═══════════════════════════════════════════════ */
+#agent-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* ═══════════════════════════════════════════════
+   PANEL
+═══════════════════════════════════════════════ */
+.panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-left: 2px solid var(--border2);
+  transition: border-left-color 0.35s;
+  position: relative;
+}
+
+.panel:nth-child(2n)  { border-right: none; }
+.panel:nth-child(n+3) { border-bottom: none; }
+
+.panel[data-role="pm"]                { --pc: var(--pm); }
+.panel[data-role="system_architect"]  { --pc: var(--sa); }
+.panel[data-role="software_architect"]{ --pc: var(--sw); }
+.panel[data-role="launch_engineer"]   { --pc: var(--prog); }
+
+.panel.active { border-left-color: var(--pc); }
+.panel.done   { border-left-color: var(--pc); }
+
+/* Panel header */
+.panel-hd {
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.18);
+}
+
+.panel-hd-l { display: flex; align-items: center; gap: 7px; }
+.panel-hd-r { display: flex; align-items: center; gap: 7px; }
+
+.panel-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted2);
+  font-weight: 500;
+  transition: color 0.3s;
+}
+.panel.active .panel-num,
+.panel.done   .panel-num { color: var(--pc); }
+
+.panel-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.3s;
+}
+.panel.active .panel-name,
+.panel.done   .panel-name { color: var(--text); }
+
+.panel-badge {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  transition: border-color 0.3s, color 0.3s;
+}
+.panel.active .panel-badge,
+.panel.done   .panel-badge { border-color: var(--pc); color: var(--pc); }
+
+.panel-status {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.3s;
+}
+
+.panel-sdot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--muted2);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.panel.active .panel-status  { color: var(--pc); }
+.panel.active .panel-sdot    { background: var(--pc); animation: blink-dot 1s ease-in-out infinite; }
+.panel.done   .panel-status  { color: var(--muted); }
+.panel.done   .panel-sdot    { background: var(--pc); animation: none; }
+
+/* Panel body */
+.panel-bd {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-idle {
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted2);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.panel-idle::before { content: '—'; flex-shrink: 0; }
+
+.panel-content {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 10px 12px 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: #ABABCC;
+  word-break: break-word;
+}
+
+.panel.active .panel-idle,
+.panel.done   .panel-idle   { display: none; }
+.panel.active .panel-content,
+.panel.done   .panel-content { display: block; }
+
+/* Panel footer */
+.panel-ft {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.12);
+}
+.panel.done .panel-ft { display: flex; }
+
+.pfn-btn {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pfn-btn:hover { border-color: var(--pc); color: var(--pc); }
+.pfn-btn.p { border-color: var(--pc); color: var(--pc); }
+.pfn-btn.p:hover { background: var(--pc); color: var(--bg); }
+
+/* Blinking cursor */
+.cursor {
+  display: inline-block;
+  width: 6px; height: 11px;
+  background: var(--pc, var(--text));
+  margin-left: 1px;
+  vertical-align: middle;
+  animation: blink-dot 0.75s step-end infinite;
+}
+.panel.done .cursor { display: none; }
+
+/* ═══════════════════════════════════════════════
+   MARKDOWN
+═══════════════════════════════════════════════ */
+.h1 {
+  display: block;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pc);
+  margin: 14px 0 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.h1:first-child { margin-top: 0; }
+
+.h2 {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 10px 0 3px;
+}
+
+.h3 {
+  display: block;
+  font-size: 10px;
+  color: #7070A0;
+  margin: 7px 0 2px;
+}
+
+.p { display: block; margin: 2px 0; }
+
+.li {
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+}
+.li::before { content: '·'; color: var(--pc); opacity: 0.5; flex-shrink: 0; }
+
+.ic { background: rgba(255,255,255,0.07); color: #88C888; padding: 1px 4px; font-size: 10.5px; }
+.pre {
+  display: block;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border2);
+  border-left: 2px solid var(--pc);
+  padding: 9px 11px;
+  margin: 7px 0;
+  overflow-x: auto;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: #90C090;
+}
+.strong { color: #E0E0F4; font-weight: 600; }
+.em { color: #A898E0; font-style: italic; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 7px 0; font-size: 10.5px; }
+.tbl th {
+  text-align: left; padding: 4px 8px;
+  border-bottom: 1px solid var(--border2);
+  color: var(--pc); font-weight: 600;
+  font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.tbl td { padding: 3px 8px; border-bottom: 1px solid var(--border); color: #ABABCC; vertical-align: top; }
+.hr { display: block; border: none; border-top: 1px solid var(--border); margin: 9px 0; }
+
+/* ═══════════════════════════════════════════════
+   BOTTOM BAR (complete state)
+═══════════════════════════════════════════════ */
+#bottom-bar {
+  height: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  transition: height 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+#bottom-bar.open { height: 48px; }
+
+.bb-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 7px;
+}
+.bb-label::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--prog);
+  display: block;
+}
+
+.bb-actions { display: flex; gap: 7px; }
+
+.bb-btn {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bb-btn:hover { border-color: var(--text); color: var(--text); }
+.bb-btn.p { border-color: var(--prog); color: var(--prog); }
+.bb-btn.p:hover { background: var(--prog); color: var(--bg); }
+
+/* ═══════════════════════════════════════════════
+   HISTORY SIDEBAR
+═══════════════════════════════════════════════ */
+#overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(8,8,13,0.75);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+  backdrop-filter: blur(3px);
+}
+#overlay.on { opacity: 1; pointer-events: all; }
+
+#hist-panel {
+  position: fixed;
+  top: 0; right: -360px; bottom: 0;
+  width: 360px; z-index: 100;
+  background: #0A0A10;
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+#hist-panel.on { right: 0; }
+
+.hist-hd {
+  height: 52px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-hd-title {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.hist-close {
+  width: 24px; height: 24px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.hist-close:hover { color: var(--text); }
+
+#hist-list { flex: 1; overflow-y: auto; }
+
+.hist-item {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.hist-item:hover { background: rgba(255,255,255,0.02); }
+
+.hist-idea {
+  font-size: 12px; color: var(--text); margin-bottom: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hist-meta {
+  font-family: var(--mono); font-size: 9px; color: var(--muted);
+  display: flex; align-items: center; gap: 7px;
+}
+.hist-tag {
+  padding: 1px 5px; border: 1px solid; font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.hist-tag.complete { border-color: var(--prog); color: var(--prog); }
+.hist-tag.running  { border-color: var(--sa);   color: var(--sa);   }
+.hist-tag.pending  { border-color: var(--muted); color: var(--muted); }
+.hist-empty { padding: 20px 16px; font-family: var(--mono); font-size: 10.5px; color: var(--muted2); text-align: center; }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 56px; left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #141422;
+  border: 1px solid var(--border2);
+  padding: 7px 14px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  opacity: 0; pointer-events: none;
+  transition: all 0.22s; z-index: 200;
+  letter-spacing: 0.05em; white-space: nowrap;
+}
+#toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════════
+   IDLE SCREEN — Google-style entry
+═══════════════════════════════════════════════ */
+#idle-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.38s ease, transform 0.38s ease;
+}
+
+#idle-screen.out {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-18px);
+}
+
+.idle-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 580px;
+  padding: 0 28px;
+}
+
+.idle-logo-mark {
+  width: 48px; height: 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+.idle-logo-mark span { display: block; }
+.idle-logo-mark span:nth-child(1) { background: var(--pm); }
+.idle-logo-mark span:nth-child(2) { background: var(--sa); }
+.idle-logo-mark span:nth-child(3) { background: var(--sw); }
+.idle-logo-mark span:nth-child(4) { background: var(--prog); }
+
+.idle-brand {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.idle-quote {
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 44px;
+  letter-spacing: 0.01em;
+}
+
+.idle-input-wrap {
+  width: 100%;
+  position: relative;
+  margin-bottom: 18px;
+}
+
+#idle-idea {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  padding: 14px 72px 14px 18px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--prog);
+  line-height: 1.5;
+}
+#idle-idea::placeholder { color: var(--muted); }
+#idle-idea:focus {
+  border-color: var(--muted);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+#idle-build {
+  position: absolute;
+  right: 10px; top: 50%;
+  transform: translateY(-50%);
+  height: 34px;
+  padding: 0 16px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#idle-build:hover { background: #fff; }
+
+.idle-pipeline {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted2);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.idle-ps { color: var(--muted); }
+.idle-arr { color: var(--muted2); }
+
+/* ── Config strip ─────────────────────────────────────────────── */
+.idle-config-strip {
+  width: 100%;
+  margin-top: 28px;
+}
+
+/* The trigger row — always visible, the main CTA when no key */
+.cfg-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 11px 14px;
+  border: 1px solid var(--border2);
+  background: rgba(255,255,255,0.02);
+  transition: border-color 0.2s, background 0.2s;
+}
+.cfg-status:hover {
+  border-color: var(--muted);
+  background: rgba(255,255,255,0.035);
+}
+.cfg-status.set {
+  border-color: rgba(74,222,128,0.25);
+  background: rgba(74,222,128,0.04);
+}
+
+/* Coloured dot — red when no key, green when set */
+.cfg-state-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #F87171;        /* red = needs action */
+  box-shadow: 0 0 6px rgba(248,113,113,0.5);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.cfg-status.set .cfg-state-dot {
+  background: var(--prog);
+  box-shadow: 0 0 6px rgba(74,222,128,0.4);
+}
+
+.cfg-status-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cfg-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.cfg-status-text {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #F87171;              /* red text = needs action */
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.cfg-status.set .cfg-status-text { color: var(--muted); }
+
+.cfg-chevron {
+  font-size: 11px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.cfg-chevron.open { transform: rotate(180deg); }
+
+/* Expanded config panel */
+.cfg-panel {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border2);
+  border-top: none;
+  background: rgba(255,255,255,0.015);
+}
+.cfg-panel.open { display: flex; }
+
+/* Provider tabs */
+.cfg-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.cfg-tab {
+  flex: 1;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cfg-tab:not(:last-child) { border-right: none; }
+.cfg-tab.on { background: var(--border2); color: var(--text); border-color: var(--muted2); }
+.cfg-tab:hover:not(.on) { color: var(--text); }
+
+/* Fields */
+.cfg-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cfg-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.cfg-select,
+.cfg-key-input {
+  flex: 1;
+  height: 30px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 0 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+.cfg-select:focus,
+.cfg-key-input:focus { border-color: var(--muted); }
+.cfg-key-input::placeholder { color: var(--muted2); }
+.cfg-select option { background: #0B0B12; }
+
+/* Key hint below the key field */
+.cfg-key-hint {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted2);
+  letter-spacing: 0.03em;
+  padding-left: 52px;        /* align with input */
+  line-height: 1.5;
+}
+.cfg-key-hint a { color: var(--sa); text-decoration: none; }
+.cfg-key-hint a:hover { text-decoration: underline; }
+
+.cfg-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.cfg-note {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted2);
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+
+.cfg-save-btn {
+  height: 30px;
+  padding: 0 18px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.cfg-save-btn:hover { background: #fff; }
+
+/* ── Ollama setup card ────────────────────────────────────────── */
+.cfg-ollama-note {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(45,212,191,0.04);
+  border: 1px solid rgba(45,212,191,0.18);
+}
+.cfg-ollama-note.visible { display: flex; }
+
+.ollama-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sa);
+  letter-spacing: 0.02em;
+}
+
+.ollama-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ollama-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ollama-step-num {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--sa);
+  letter-spacing: 0.08em;
+  background: rgba(45,212,191,0.12);
+  padding: 2px 6px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ollama-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ollama-step-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ollama-step-desc {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.ollama-cmd {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #6EF0C8;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(45,212,191,0.2);
+  padding: 4px 10px;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+  cursor: text;
+  user-select: all;
+}
+
+.ollama-note-footer {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted2);
+  border-top: 1px solid rgba(45,212,191,0.1);
+  padding-top: 8px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════
+   GITHUB MODAL
+═══════════════════════════════════════════════ */
+#gh-modal-overlay {
+  position: fixed; inset: 0; z-index: 700;
+  background: rgba(8,8,13,0.8);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s;
+}
+#gh-modal-overlay.on { opacity: 1; pointer-events: all; }
+
+#gh-modal {
+  width: 100%; max-width: 440px;
+  background: #0A0A12;
+  border: 1px solid var(--border2);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  transform: translateY(8px);
+  transition: transform 0.22s;
+}
+#gh-modal-overlay.on #gh-modal { transform: translateY(0); }
+
+.gh-modal-title {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.gh-modal-close {
+  width: 22px; height: 22px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.gh-modal-close:hover { color: var(--text); }
+
+.gh-field {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.gh-label {
+  font-family: var(--mono); font-size: 8.5px;
+  color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.gh-input {
+  height: 30px;
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--mono); font-size: 10.5px;
+  padding: 0 9px; outline: none; transition: border-color 0.15s;
+}
+.gh-input:focus { border-color: var(--muted); }
+.gh-input::placeholder { color: var(--muted2); }
+
+.gh-hint {
+  font-family: var(--mono); font-size: 8px;
+  color: var(--muted2); letter-spacing: 0.03em; line-height: 1.5;
+}
+.gh-hint a { color: var(--sa); text-decoration: none; }
+.gh-hint a:hover { text-decoration: underline; }
+
+.gh-actions {
+  display: flex; justify-content: flex-end; gap: 7px; margin-top: 4px;
+}
+.gh-btn {
+  height: 30px; padding: 0 16px;
+  font-family: var(--mono); font-size: 9px;
+  font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.gh-btn:hover { border-color: var(--muted); color: var(--text); }
+.gh-btn.p {
+  background: var(--prog); color: var(--bg);
+  border-color: var(--prog);
+}
+.gh-btn.p:hover { background: #6EF0A0; border-color: #6EF0A0; }
+.gh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gh-progress {
+  display: none;
+  font-family: var(--mono); font-size: 9.5px; color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.gh-progress.on { display: block; }
+
+/* ═══════════════════════════════════════════════
+   CLARIFY SCREEN — between idle and run
+═══════════════════════════════════════════════ */
+#clarify-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow-y: auto;
+}
+#clarify-screen.in {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+.clar-wrap {
+  width: 100%;
+  max-width: 560px;
+  padding: 40px 28px;
+}
+
+.clar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.clar-back {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.clar-back:hover { color: var(--text); border-color: var(--muted); }
+
+.clar-headline {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.clar-skip-all {
+  background: transparent;
+  border: none;
+  color: var(--muted2);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 0.15s;
+  padding: 5px 0;
+}
+.clar-skip-all:hover { color: var(--muted); }
+
+.clar-q {
+  margin-bottom: 26px;
+}
+
+.clar-q-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.clar-q-why {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted2);
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.clar-q-why span { color: var(--muted); }
+
+.clar-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.clar-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  min-width: 118px;
+}
+.clar-opt:hover { border-color: var(--muted); background: rgba(255,255,255,0.02); }
+.clar-opt.sel   { border-color: var(--text); background: rgba(255,255,255,0.04); }
+.clar-opt.sel .clar-opt-label { color: var(--text); }
+.clar-opt.ns    { border-style: dashed; }
+
+.clar-opt-label {
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.15s;
+  line-height: 1.3;
+}
+
+.clar-opt-desc {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--muted2);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.clar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border2);
+}
+
+.clar-build-btn {
+  height: 38px;
+  padding: 0 24px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.2s;
+}
+.clar-build-btn:hover { background: #fff; }
+.clar-build-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  html, body { overflow: auto; height: auto; }
+  #app { height: auto; min-height: 100vh; }
+  #agent-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(300px, auto));
+  }
+  #workspace { overflow-y: auto; flex: none; }
+  .panel:nth-child(2n) { border-right: none; }
+  .panel:nth-child(n+3) { border-bottom: 1px solid var(--border); }
+  .panel:last-child { border-bottom: none; }
+  .logo-name { display: none; }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── Idle Screen ────────────────────────────────────────────────────────── -->
+<div id="idle-screen">
+  <div class="idle-center">
+    <div class="idle-logo-mark">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="idle-brand">ProductOS</div>
+    <div class="idle-quote">The team that thinks before it builds.</div>
+    <div class="idle-input-wrap">
+      <input id="idle-idea"
+        type="text"
+        placeholder="Describe your product idea…"
+        autocomplete="off"
+        spellcheck="false" />
+      <button id="idle-build" onclick="launchFromIdle()">Build</button>
+    </div>
+    <div class="idle-pipeline">
+      <span class="idle-ps">PM</span>
+      <span class="idle-arr">→</span>
+      <span class="idle-ps">Sys Arch</span>
+      <span class="idle-arr">→</span>
+      <span class="idle-ps">SW Arch</span>
+      <span class="idle-arr">→</span>
+      <span class="idle-ps">Launch Eng</span>
+    </div>
+
+    <!-- Config strip -->
+    <div class="idle-config-strip">
+      <div class="cfg-status" id="cfg-status" onclick="toggleCfg()">
+        <span class="cfg-state-dot" id="cfg-state-dot"></span>
+        <div class="cfg-status-body">
+          <span class="cfg-status-label">Model &amp; API Key</span>
+          <span class="cfg-status-text" id="cfg-status-text">No API key — click to add yours before building</span>
+        </div>
+        <span class="cfg-chevron" id="cfg-chevron">▾</span>
+      </div>
+
+      <div class="cfg-panel" id="cfg-panel">
+        <div class="cfg-tabs">
+          <button class="cfg-tab on" id="tab-anthropic" onclick="selectProvider('anthropic')">Claude · Best</button>
+          <button class="cfg-tab"    id="tab-openai"    onclick="selectProvider('openai')">OpenAI</button>
+          <button class="cfg-tab"    id="tab-ollama"    onclick="selectProvider('ollama')">Ollama · Free</button>
+        </div>
+
+        <div class="cfg-field">
+          <span class="cfg-label">Model</span>
+          <select class="cfg-select" id="cfg-model"></select>
+        </div>
+
+        <div class="cfg-field" id="cfg-key-row">
+          <span class="cfg-label">API Key</span>
+          <input class="cfg-key-input" id="cfg-key" type="password" placeholder="Paste your API key here…" autocomplete="off" />
+        </div>
+        <div class="cfg-key-hint" id="cfg-key-hint">
+          Get your key at
+          <a id="cfg-key-link" href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+          · <span id="cfg-key-rec"></span>stored only in your browser, never sent to our servers
+        </div>
+
+        <!-- Ollama setup steps (shown only when Ollama tab active) -->
+        <div class="cfg-ollama-note" id="cfg-ollama-note">
+          <div class="ollama-title">How to set up Ollama — free, runs on your machine</div>
+          <div class="ollama-steps">
+
+            <div class="ollama-step">
+              <span class="ollama-step-num">01</span>
+              <div class="ollama-step-body">
+                <span class="ollama-step-title">Install Ollama</span>
+                <span class="ollama-step-desc">Download and install from <a href="https://ollama.com" target="_blank" style="color:var(--sa);text-decoration:none">ollama.com</a> — available for Mac, Windows, Linux</span>
+              </div>
+            </div>
+
+            <div class="ollama-step">
+              <span class="ollama-step-num">02</span>
+              <div class="ollama-step-body">
+                <span class="ollama-step-title">Start Ollama</span>
+                <span class="ollama-step-desc">Open the Ollama app — or run in your terminal:</span>
+                <span class="ollama-cmd">ollama serve</span>
+              </div>
+            </div>
+
+            <div class="ollama-step">
+              <span class="ollama-step-num">03</span>
+              <div class="ollama-step-body">
+                <span class="ollama-step-title">Pull a model (once)</span>
+                <span class="ollama-step-desc">In a new terminal tab, download the model you want:</span>
+                <span class="ollama-cmd">ollama pull llama3.2</span>
+                <span class="ollama-step-desc" style="margin-top:3px">Other options: mistral · gemma2:9b · qwen2.5:14b</span>
+              </div>
+            </div>
+
+            <div class="ollama-step">
+              <span class="ollama-step-num">04</span>
+              <div class="ollama-step-body">
+                <span class="ollama-step-title">Select model above &amp; hit Build</span>
+                <span class="ollama-step-desc">No API key needed — ProductOS connects to localhost:11434</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="ollama-note-footer">
+            Only works when ProductOS is running locally on the same machine as Ollama.
+            Quality varies by model — Llama 3.2 is a good starting point.
+          </div>
+        </div>
+
+        <div class="cfg-footer">
+          <span class="cfg-note">Key stored in your browser only</span>
+          <button class="cfg-save-btn" onclick="saveCfg()">Save</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Clarify Screen ────────────────────────────────────────────────────────── -->
+<div id="clarify-screen">
+  <div class="clar-wrap">
+
+    <div class="clar-header">
+      <button class="clar-back" onclick="backToIdle()">← Back</button>
+      <span class="clar-headline">3 quick questions · &lt; 60 s</span>
+      <button class="clar-skip-all" onclick="skipClarify()">Skip — agents decide →</button>
+    </div>
+
+    <!-- Q1: Audience -->
+    <div class="clar-q">
+      <span class="clar-q-label">Who is this for?</span>
+      <span class="clar-q-why">Why: shapes UX, pricing, and how users discover your product.
+        <span>If you don't know yet, pick "Not sure" — the PM agent will figure it out.</span></span>
+      <div class="clar-opts" id="opts-q1">
+        <button class="clar-opt" onclick="pickOpt('q1','Consumers',this)">
+          <span class="clar-opt-label">Consumers</span>
+          <span class="clar-opt-desc">General public · B2C</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q1','Businesses',this)">
+          <span class="clar-opt-label">Businesses</span>
+          <span class="clar-opt-desc">Teams or companies · B2B</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q1','Developers',this)">
+          <span class="clar-opt-label">Developers</span>
+          <span class="clar-opt-desc">APIs, tools, SDKs</span>
+        </button>
+        <button class="clar-opt ns" onclick="pickOpt('q1',null,this)">
+          <span class="clar-opt-label">Not sure</span>
+          <span class="clar-opt-desc">Agent decides</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Q2: Business Model -->
+    <div class="clar-q">
+      <span class="clar-q-label">Free or paid?</span>
+      <span class="clar-q-why">Why: sets the business model your PM starts from.
+        <span>No wrong answer — freemium is a valid hedge if you're torn.</span></span>
+      <div class="clar-opts" id="opts-q2">
+        <button class="clar-opt" onclick="pickOpt('q2','Free',this)">
+          <span class="clar-opt-label">Free</span>
+          <span class="clar-opt-desc">No cost · grow fast</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q2','Paid',this)">
+          <span class="clar-opt-label">Paid</span>
+          <span class="clar-opt-desc">Subscription or one-time</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q2','Freemium',this)">
+          <span class="clar-opt-label">Freemium</span>
+          <span class="clar-opt-desc">Free + premium tier</span>
+        </button>
+        <button class="clar-opt ns" onclick="pickOpt('q2',null,this)">
+          <span class="clar-opt-label">Not sure</span>
+          <span class="clar-opt-desc">Agent decides</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Q3: Timeline -->
+    <div class="clar-q">
+      <span class="clar-q-label">Launch timeline?</span>
+      <span class="clar-q-why">Why: tells the architect how much to simplify the initial design.
+        <span>Fast means cut scope aggressively. No rush means build it right.</span></span>
+      <div class="clar-opts" id="opts-q3">
+        <button class="clar-opt" onclick="pickOpt('q3','Fast — 2 to 4 weeks',this)">
+          <span class="clar-opt-label">Fast</span>
+          <span class="clar-opt-desc">2-4 weeks · MVP only</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q3','Normal — 1 to 2 months',this)">
+          <span class="clar-opt-label">Normal</span>
+          <span class="clar-opt-desc">1-2 months · solid V1</span>
+        </button>
+        <button class="clar-opt" onclick="pickOpt('q3','No rush',this)">
+          <span class="clar-opt-label">No rush</span>
+          <span class="clar-opt-desc">Build it right</span>
+        </button>
+        <button class="clar-opt ns" onclick="pickOpt('q3',null,this)">
+          <span class="clar-opt-label">Not sure</span>
+          <span class="clar-opt-desc">Agent decides</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="clar-footer">
+      <button class="clar-build-btn" id="clar-build-btn" onclick="startWithAnswers()">Build Now →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Topbar -->
+<header id="topbar">
+  <div class="logo">
+    <div class="logo-grid">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="logo-name">Product<em>OS</em></div>
+  </div>
+  <div class="divider"></div>
+  <div id="input-row">
+    <input id="idea-input"
+      type="text"
+      placeholder="Describe a product idea and press Enter…"
+      autocomplete="off"
+      spellcheck="false" />
+    <button id="build-btn" onclick="startAnalysis()">Build</button>
+  </div>
+  <button id="history-btn" title="History" onclick="toggleHistory()">
+    <svg viewBox="0 0 14 14" fill="none" width="13" height="13" stroke="currentColor" stroke-width="1.25" stroke-linecap="round">
+      <circle cx="7" cy="7" r="5.5"/>
+      <path d="M7 4v3.2l1.8 1.3"/>
+    </svg>
+  </button>
+</header>
+
+<!-- Error banner -->
+<div id="error-banner">
+  <span>●</span>
+  <span id="error-msg">Error</span>
+  <button id="error-dismiss" onclick="clearError()">×</button>
+</div>
+
+<!-- Pipeline bar -->
+<div id="pipeline-bar">
+  <div class="pipe-step" id="pipe-pm" style="--step-color:var(--pm)">
+    <span class="pipe-num">01</span>
+    <span class="pipe-dot"></span>
+    <span class="pipe-label">PM</span>
+    <span class="pipe-artifact">PRD</span>
+  </div>
+  <div class="pipe-connector" id="conn-1" style="--step-color:var(--pm)"></div>
+  <div class="pipe-step" id="pipe-system_architect" style="--step-color:var(--sa)">
+    <span class="pipe-num">02</span>
+    <span class="pipe-dot"></span>
+    <span class="pipe-label">Sys Arch</span>
+    <span class="pipe-artifact">HLD</span>
+  </div>
+  <div class="pipe-connector" id="conn-2" style="--step-color:var(--sa)"></div>
+  <div class="pipe-step" id="pipe-software_architect" style="--step-color:var(--sw)">
+    <span class="pipe-num">03</span>
+    <span class="pipe-dot"></span>
+    <span class="pipe-label">SW Arch</span>
+    <span class="pipe-artifact">LLD</span>
+  </div>
+  <div class="pipe-connector" id="conn-3" style="--step-color:var(--sw)"></div>
+  <div class="pipe-step" id="pipe-launch_engineer" style="--step-color:var(--prog)">
+    <span class="pipe-num">04</span>
+    <span class="pipe-dot"></span>
+    <span class="pipe-label">Launch Eng</span>
+    <span class="pipe-artifact">Plan</span>
+  </div>
+
+  <div id="pipe-meta">
+    <span id="session-id"></span>
+    <div id="run-status">
+      <span class="dot"></span>
+      <span id="status-txt">IDLE</span>
+    </div>
+  </div>
+</div>
+
+<!-- Workspace -->
+<main id="workspace">
+  <div id="agent-grid">
+
+    <!-- PM -->
+    <div class="panel" id="panel-pm" data-role="pm">
+      <div class="panel-hd">
+        <div class="panel-hd-l">
+          <span class="panel-num">01</span>
+          <span class="panel-name">Product Manager</span>
+        </div>
+        <div class="panel-hd-r">
+          <span class="panel-badge">PRD</span>
+          <div class="panel-status">
+            <span class="panel-sdot"></span>
+            <span class="panel-stxt">WAITING</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="panel-idle">Submit an idea to begin</div>
+        <div class="panel-content" id="content-pm"></div>
+      </div>
+      <div class="panel-ft">
+        <button class="pfn-btn" onclick="copyArtifact('pm')">Copy</button>
+        <button class="pfn-btn p" onclick="downloadArtifact('pm','PRD')">↓ PRD.md</button>
+      </div>
+    </div>
+
+    <!-- System Architect -->
+    <div class="panel" id="panel-system_architect" data-role="system_architect">
+      <div class="panel-hd">
+        <div class="panel-hd-l">
+          <span class="panel-num">02</span>
+          <span class="panel-name">System Architect</span>
+        </div>
+        <div class="panel-hd-r">
+          <span class="panel-badge">HLD</span>
+          <div class="panel-status">
+            <span class="panel-sdot"></span>
+            <span class="panel-stxt">WAITING</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="panel-idle">Waiting for PRD</div>
+        <div class="panel-content" id="content-system_architect"></div>
+      </div>
+      <div class="panel-ft">
+        <button class="pfn-btn" onclick="copyArtifact('system_architect')">Copy</button>
+        <button class="pfn-btn p" onclick="downloadArtifact('system_architect','HLD')">↓ HLD.md</button>
+      </div>
+    </div>
+
+    <!-- SW Architect -->
+    <div class="panel" id="panel-software_architect" data-role="software_architect">
+      <div class="panel-hd">
+        <div class="panel-hd-l">
+          <span class="panel-num">03</span>
+          <span class="panel-name">SW Architect</span>
+        </div>
+        <div class="panel-hd-r">
+          <span class="panel-badge">LLD</span>
+          <div class="panel-status">
+            <span class="panel-sdot"></span>
+            <span class="panel-stxt">WAITING</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="panel-idle">Waiting for HLD</div>
+        <div class="panel-content" id="content-software_architect"></div>
+      </div>
+      <div class="panel-ft">
+        <button class="pfn-btn" onclick="copyArtifact('software_architect')">Copy</button>
+        <button class="pfn-btn p" onclick="downloadArtifact('software_architect','LLD')">↓ LLD.md</button>
+      </div>
+    </div>
+
+    <!-- Launch Engineer -->
+    <div class="panel" id="panel-launch_engineer" data-role="launch_engineer">
+      <div class="panel-hd">
+        <div class="panel-hd-l">
+          <span class="panel-num">04</span>
+          <span class="panel-name">Launch Engineer</span>
+        </div>
+        <div class="panel-hd-r">
+          <span class="panel-badge">Plan</span>
+          <div class="panel-status">
+            <span class="panel-sdot"></span>
+            <span class="panel-stxt">WAITING</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="panel-idle">Waiting for LLD</div>
+        <div class="panel-content" id="content-launch_engineer"></div>
+      </div>
+      <div class="panel-ft">
+        <button class="pfn-btn" onclick="copyArtifact('launch_engineer')">Copy</button>
+        <button class="pfn-btn p" onclick="downloadArtifact('launch_engineer','Plan')">↓ Plan.md</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Bottom bar -->
+<div id="bottom-bar">
+  <div class="bb-label">All 4 artifacts ready</div>
+  <div class="bb-actions">
+    <button class="bb-btn" onclick="copyAll()">Copy All</button>
+    <button class="bb-btn" onclick="downloadAll()">↓ Download All</button>
+    <button class="bb-btn p" onclick="openGhModal()">↑ Push to GitHub</button>
+  </div>
+</div>
+
+<!-- GitHub push modal -->
+<div id="gh-modal-overlay" onclick="closeGhModal(event)">
+  <div id="gh-modal">
+    <div class="gh-modal-title">
+      <span>Push to GitHub</span>
+      <button class="gh-modal-close" onclick="closeGhModal()">×</button>
+    </div>
+    <div class="gh-field">
+      <span class="gh-label">Repository URL</span>
+      <input class="gh-input" id="gh-repo" type="text"
+        placeholder="https://github.com/username/repo-name" autocomplete="off" />
+    </div>
+    <div class="gh-field">
+      <span class="gh-label">Personal Access Token</span>
+      <input class="gh-input" id="gh-token" type="password"
+        placeholder="ghp_…" autocomplete="off" />
+      <span class="gh-hint">
+        Needs <strong style="color:var(--muted)">public_repo</strong> scope for public repos,
+        <strong style="color:var(--muted)">repo</strong> for private.
+        Generate one at github.com → Settings → Developer settings → Personal access tokens.
+      </span>
+    </div>
+    <div class="gh-progress" id="gh-progress">Pushing…</div>
+    <div class="gh-actions">
+      <button class="gh-btn" onclick="closeGhModal()">Cancel</button>
+      <button class="gh-btn p" id="gh-push-btn" onclick="pushToGitHub()">Push →</button>
+    </div>
+  </div>
+</div>
+
+<!-- History -->
+<div id="overlay" onclick="closeHistory()"></div>
+<div id="hist-panel">
+  <div class="hist-hd">
+    <span class="hist-hd-title">Session History</span>
+    <button class="hist-close" onclick="closeHistory()">×</button>
+  </div>
+  <div id="hist-list"><div class="hist-empty">No sessions yet</div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ROLES = ['pm','system_architect','software_architect','launch_engineer'];
+const state = { idea:'', sessionId:null, artifacts:{}, rawText:{}, es:null };
+ROLES.forEach(r => { state.artifacts[r]=''; state.rawText[r]=''; });
+
+// ── Markdown ─────────────────────────────────────────────────────────────────
+function md(text) {
+  const lines = text.split('\n');
+  let out='', inCode=false, codeBuf='', inTable=false, tableRows=[];
+
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const flush = () => {
+    if (!tableRows.length) return '';
+    let t = '<table class="tbl"><thead>';
+    tableRows.forEach((row, i) => {
+      const cells = row.split('|').filter(c => c.trim() && !/^[-\s]+$/.test(c));
+      if (!cells.length) return;
+      if (i===0) t += '<tr>'+cells.map(c=>`<th>${esc(c.trim())}</th>`).join('')+'</tr></thead><tbody>';
+      else if (!/^[-|\s]+$/.test(row)) t += '<tr>'+cells.map(c=>`<td>${span(c.trim())}</td>`).join('')+'</tr>';
+    });
+    t += '</tbody></table>';
+    tableRows=[]; inTable=false;
+    return t;
+  };
+
+  const span = s => {
+    let r = esc(s);
+    r = r.replace(/\*\*(.+?)\*\*/g,'<span class="strong">$1</span>');
+    r = r.replace(/__(.+?)__/g,'<span class="strong">$1</span>');
+    r = r.replace(/\*([^*]+?)\*/g,'<span class="em">$1</span>');
+    r = r.replace(/`([^`]+?)`/g,'<span class="ic">$1</span>');
+    return r;
+  };
+
+  for (const line of lines) {
+    if (line.startsWith('```')) {
+      if (inCode) { out+=`<pre class="pre">${esc(codeBuf.trimEnd())}</pre>`; inCode=false; codeBuf=''; }
+      else { if(inTable) out+=flush(); inCode=true; }
+      continue;
+    }
+    if (inCode) { codeBuf+=line+'\n'; continue; }
+    if (line.trim().startsWith('|')) { inTable=true; tableRows.push(line.trim()); continue; }
+    else if (inTable) out+=flush();
+    if (/^---+$/.test(line.trim()))      { out+='<span class="hr"></span>'; continue; }
+    if (line.startsWith('# '))           { out+=`<span class="h1">${esc(line.slice(2))}</span>`; continue; }
+    if (line.startsWith('## '))          { out+=`<span class="h2">${esc(line.slice(3))}</span>`; continue; }
+    if (line.startsWith('### '))         { out+=`<span class="h3">${esc(line.slice(4))}</span>`; continue; }
+    if (/^[-*+]\s/.test(line))           { out+=`<div class="li">${span(line.slice(2))}</div>`; continue; }
+    if (/^\d+\.\s/.test(line))           { out+=`<div class="li">${span(line.replace(/^\d+\.\s/,''))}</div>`; continue; }
+    if (!line.trim())                    { out+='<div style="height:4px"></div>'; continue; }
+    out+=`<div class="p">${span(line)}</div>`;
+  }
+  if (inCode&&codeBuf) out+=`<pre class="pre">${esc(codeBuf.trimEnd())}</pre>`;
+  if (inTable) out+=flush();
+  return out;
+}
+
+// ── DOM ───────────────────────────────────────────────────────────────────────
+const $panel   = r => document.getElementById(`panel-${r}`);
+const $content = r => document.getElementById(`content-${r}`);
+
+function setStatus(role, txt) {
+  const p = $panel(role);
+  if (p) p.querySelector('.panel-stxt').textContent = txt;
+}
+
+function activatePanel(role) {
+  const p = $panel(role);
+  if (!p) return;
+  p.classList.remove('done'); p.classList.add('active');
+  setStatus(role, 'THINKING');
+}
+
+function completePanel(role) {
+  const p = $panel(role);
+  if (!p) return;
+  p.classList.remove('active'); p.classList.add('done');
+  setStatus(role, 'DONE');
+  const cur = $content(role).querySelector('.cursor');
+  if (cur) cur.remove();
+}
+
+function setPipe(role, st) {
+  const s = document.getElementById(`pipe-${role}`);
+  if (!s) return;
+  s.classList.remove('active','done');
+  if (st) s.classList.add(st);
+}
+
+function render(role) {
+  const el = $content(role);
+  if (!el) return;
+  const hasCur = !!el.querySelector('.cursor');
+  el.innerHTML = md(state.rawText[role]);
+  if (hasCur) {
+    const c = document.createElement('span');
+    c.className = 'cursor';
+    el.appendChild(c);
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+function setRunStatus(mode, txt) {
+  const el = document.getElementById('run-status');
+  el.className = mode;
+  document.getElementById('status-txt').textContent = txt;
+}
+
+function showError(msg) {
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('error-banner').classList.add('visible');
+  setRunStatus('error','ERROR');
+}
+
+function clearError() {
+  document.getElementById('error-banner').classList.remove('visible');
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const MODELS = {
+  anthropic: [
+    { v:'claude-sonnet-4-6',           l:'Sonnet 4.6 — recommended' },
+    { v:'claude-haiku-4-5-20251001',   l:'Haiku 4.5 — fast & cheap' },
+    { v:'claude-opus-4-6',             l:'Opus 4.6 — most capable'  },
+  ],
+  openai: [
+    { v:'gpt-4o',      l:'GPT-4o — recommended' },
+    { v:'o4-mini',     l:'o4-mini — best value' },
+    { v:'o3',          l:'o3 — highest quality' },
+    { v:'gpt-4o-mini', l:'GPT-4o mini — fast & cheap' },
+  ],
+  ollama: [
+    { v:'llama3.2',       l:'Llama 3.2 — recommended' },
+    { v:'llama3.1:8b',    l:'Llama 3.1 8B — fast' },
+    { v:'llama3.1:70b',   l:'Llama 3.1 70B — high quality' },
+    { v:'mistral',        l:'Mistral 7B' },
+    { v:'qwen2.5:14b',    l:'Qwen 2.5 14B' },
+    { v:'gemma2:9b',      l:'Gemma 2 9B' },
+    { v:'phi3:mini',      l:'Phi-3 Mini — very fast' },
+  ],
+};
+
+const cfg = { provider:'anthropic', model:'claude-sonnet-4-6', key:'' };
+
+function loadCfg() {
+  try {
+    const s = JSON.parse(localStorage.getItem('pos_cfg') || '{}');
+    if (s.provider) cfg.provider = s.provider;
+    if (s.model)    cfg.model    = s.model;
+    if (s.key)      cfg.key      = s.key;
+  } catch {}
+  selectProvider(cfg.provider, false);
+  if (cfg.key && cfg.provider !== 'ollama') {
+    document.getElementById('cfg-key').value = '●'.repeat(20);
+  }
+  refreshCfgStatus();
+}
+
+function saveCfg() {
+  const rawKey = document.getElementById('cfg-key').value.trim();
+  if (rawKey && !rawKey.startsWith('●')) cfg.key = rawKey;
+  cfg.provider = document.querySelector('.cfg-tab.on').dataset.p;
+  cfg.model    = document.getElementById('cfg-model').value;
+  localStorage.setItem('pos_cfg', JSON.stringify(cfg));
+  refreshCfgStatus();
+  closeCfg();
+  toast('Config saved');
+}
+
+function selectProvider(p, reset = true) {
+  cfg.provider = p;
+  ['anthropic','openai','ollama'].forEach(id => {
+    document.getElementById(`tab-${id}`).classList.toggle('on', p===id);
+    document.getElementById(`tab-${id}`).dataset.p = id;
+  });
+  const sel = document.getElementById('cfg-model');
+  sel.innerHTML = MODELS[p].map(m=>`<option value="${m.v}">${m.l}</option>`).join('');
+  if (!reset && MODELS[p].find(m=>m.v===cfg.model)) sel.value = cfg.model;
+
+  const isOllama = p === 'ollama';
+  document.getElementById('cfg-key-row').style.display    = isOllama ? 'none' : '';
+  document.getElementById('cfg-key-hint').style.display   = isOllama ? 'none' : '';
+  document.getElementById('cfg-ollama-note').classList.toggle('visible', isOllama);
+
+  if (!isOllama) {
+    document.getElementById('cfg-key').placeholder = 'Paste your API key here…';
+    const link = document.getElementById('cfg-key-link');
+    link.href        = p==='anthropic' ? 'https://console.anthropic.com' : 'https://platform.openai.com/api-keys';
+    link.textContent = p==='anthropic' ? 'console.anthropic.com' : 'platform.openai.com/api-keys';
+    const rec = document.getElementById('cfg-key-rec');
+    rec.textContent  = p==='anthropic' ? 'Recommended for best results · ' : '';
+    rec.style.color  = p==='anthropic' ? 'var(--pm)' : '';
+  }
+}
+
+function refreshCfgStatus() {
+  const el  = document.getElementById('cfg-status-text');
+  const bar = document.getElementById('cfg-status');
+  const mName = (MODELS[cfg.provider]?.find(m=>m.v===cfg.model)?.l || cfg.model).split(' —')[0];
+  if (cfg.provider === 'ollama') {
+    el.textContent = `Ollama · ${mName} · running locally · no key needed`;
+    bar.classList.add('set');
+  } else if (cfg.key) {
+    const pName = cfg.provider === 'anthropic' ? 'Claude' : 'OpenAI';
+    el.textContent = `${pName} · ${mName} · key saved`;
+    bar.classList.add('set');
+  } else {
+    el.textContent = 'No API key — click to add yours before building';
+    bar.classList.remove('set');
+  }
+}
+
+function toggleCfg() {
+  const open = document.getElementById('cfg-panel').classList.toggle('open');
+  document.getElementById('cfg-chevron').classList.toggle('open', open);
+}
+
+function closeCfg() {
+  document.getElementById('cfg-panel').classList.remove('open');
+  document.getElementById('cfg-chevron').classList.remove('open');
+}
+
+// ── Build flow ────────────────────────────────────────────────────────────────
+async function postBuild(idea) {
+  const res = await fetch('/api/build', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ idea, api_key: cfg.key, model: cfg.model, provider: cfg.provider })
+  });
+  return res.json();
+}
+
+function startStream(session_id) {
+  if (state.es) { state.es.close(); state.es = null; }
+  clearError();
+  ROLES.forEach(r => {
+    state.artifacts[r]=''; state.rawText[r]='';
+    const p=$panel(r); if(p) p.classList.remove('active','done');
+    setStatus(r,'WAITING');
+    const c=$content(r); if(c) c.innerHTML='';
+    setPipe(r,null);
+  });
+  document.getElementById('bottom-bar').classList.remove('open');
+  document.getElementById('build-btn').disabled = true;
+  setRunStatus('running','RUNNING');
+
+  const es = new EventSource(`/api/stream?session=${encodeURIComponent(session_id)}`);
+  state.es = es;
+  es.onmessage = onSSE;
+  es.onerror = () => {
+    showError('Connection failed');
+    document.getElementById('build-btn').disabled = false;
+    if (state.es) { state.es.close(); state.es = null; }
+  };
+}
+
+// ── Clarify Screen ────────────────────────────────────────────────────────────
+const clarify = { idea: '', q1: null, q2: null, q3: null };
+
+function showClarify(idea) {
+  clarify.idea = idea;
+  ['q1','q2','q3'].forEach(q => {
+    clarify[q] = null;
+    document.querySelectorAll(`#opts-${q} .clar-opt`).forEach(b => b.classList.remove('sel'));
+  });
+  const cb = document.getElementById('clar-build-btn');
+  cb.disabled = false; cb.textContent = 'Build Now →';
+  document.getElementById('idle-screen').classList.add('out');
+  document.getElementById('clarify-screen').classList.add('in');
+}
+
+function backToIdle() {
+  document.getElementById('clarify-screen').classList.remove('in');
+  document.getElementById('idle-screen').classList.remove('out');
+  const btn = document.getElementById('idle-build');
+  btn.disabled = false; btn.textContent = 'Build';
+}
+
+function pickOpt(qId, value, btnEl) {
+  clarify[qId] = value;
+  document.querySelectorAll(`#opts-${qId} .clar-opt`).forEach(b => b.classList.remove('sel'));
+  btnEl.classList.add('sel');
+}
+
+async function skipClarify() {
+  await _doBuild(clarify.idea, {});
+}
+
+async function startWithAnswers() {
+  const answers = {};
+  if (clarify.q1) answers['Target audience'] = clarify.q1;
+  if (clarify.q2) answers['Business model']  = clarify.q2;
+  if (clarify.q3) answers['Timeline']        = clarify.q3;
+  await _doBuild(clarify.idea, answers);
+}
+
+async function _doBuild(idea, answers) {
+  const btn = document.getElementById('clar-build-btn');
+  btn.disabled = true; btn.textContent = '…';
+
+  let enrichedIdea = idea;
+  const keys = Object.keys(answers);
+  if (keys.length) {
+    enrichedIdea += '\n\n## User Context\n' + keys.map(k => `- ${k}: ${answers[k]}`).join('\n');
+  }
+
+  try {
+    const data = await postBuild(enrichedIdea);
+    if (data.error) {
+      toast(data.error);
+      if (data.error.toLowerCase().includes('key')) {
+        document.getElementById('clarify-screen').classList.remove('in');
+        document.getElementById('idle-screen').classList.remove('out');
+        const ib = document.getElementById('idle-build');
+        ib.disabled = false; ib.textContent = 'Build';
+        toggleCfg();
+      } else {
+        btn.disabled = false; btn.textContent = 'Build Now →';
+      }
+      return;
+    }
+    document.getElementById('idea-input').value = idea;
+    document.getElementById('clarify-screen').classList.remove('in');
+    startStream(data.session_id);
+  } catch {
+    toast('Connection failed — server running?');
+    btn.disabled = false; btn.textContent = 'Build Now →';
+  }
+}
+
+// ── Idle → Clarify ────────────────────────────────────────────────────────────
+function launchFromIdle() {
+  const val = document.getElementById('idle-idea').value.trim();
+  if (!val) { document.getElementById('idle-idea').focus(); return; }
+  showClarify(val);
+}
+
+document.getElementById('idle-idea').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); launchFromIdle(); }
+});
+
+// ── Start (from topbar) ───────────────────────────────────────────────────────
+async function startAnalysis() {
+  const idea = document.getElementById('idea-input').value.trim();
+  if (!idea) { document.getElementById('idea-input').focus(); return; }
+  try {
+    const data = await postBuild(idea);
+    if (data.error) { showError(data.error); return; }
+    startStream(data.session_id);
+  } catch { showError('Connection failed'); }
+}
+
+function onSSE(event) {
+  let d; try { d = JSON.parse(event.data); } catch(e) { return; }
+
+  switch (d.type) {
+    case 'session_start': {
+      state.sessionId = d.session_id;
+      const el = document.getElementById('session-id');
+      el.textContent = `SID ${d.session_id}`;
+      el.style.display = 'block';
+      break;
+    }
+    case 'agent_start': {
+      activatePanel(d.role);
+      setPipe(d.role,'active');
+      const c = $content(d.role);
+      if (c) { const cur=document.createElement('span'); cur.className='cursor'; c.appendChild(cur); }
+      break;
+    }
+    case 'token':
+      state.rawText[d.role] = (state.rawText[d.role]||'') + d.text;
+      render(d.role);
+      break;
+
+    case 'agent_done':
+      state.artifacts[d.role] = d.content;
+      state.rawText[d.role]   = d.content;
+      completePanel(d.role);
+      setPipe(d.role,'done');
+      render(d.role);
+      break;
+
+    case 'complete':
+      document.getElementById('bottom-bar').classList.add('open');
+      document.getElementById('build-btn').disabled = false;
+      setRunStatus('done','DONE');
+      if (state.es) { state.es.close(); state.es = null; }
+      break;
+
+    case 'error':
+      showError(d.message);
+      document.getElementById('build-btn').disabled = false;
+      if (state.es) { state.es.close(); state.es = null; }
+      break;
+  }
+}
+
+// ── Download / Copy ───────────────────────────────────────────────────────────
+function copyArtifact(role) {
+  const t = state.artifacts[role]||state.rawText[role];
+  if (!t) { toast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(t).then(() => toast('Copied'));
+}
+
+function downloadArtifact(role, label) {
+  const t = state.artifacts[role]||state.rawText[role];
+  if (!t) { toast('Nothing to download'); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([t],{type:'text/markdown'}));
+  a.download = `${label.toLowerCase()}_${state.sessionId||'export'}.md`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast(`Downloaded ${label}.md`);
+}
+
+function copyAll() {
+  const parts = ROLES.map(r=>state.artifacts[r]?`# ${r}\n\n${state.artifacts[r]}`:null).filter(Boolean);
+  if (!parts.length) { toast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(parts.join('\n\n---\n\n')).then(()=>toast('All copied'));
+}
+
+function downloadAll() {
+  const parts = ROLES.map(r=>state.artifacts[r]?`# ${r}\n\n${state.artifacts[r]}`:null).filter(Boolean);
+  if (!parts.length) { toast('Nothing to download'); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([`# ProductOS: ${state.idea}\n\n---\n\n`+parts.join('\n\n---\n\n')],{type:'text/markdown'}));
+  a.download = `productos_${state.sessionId||'export'}.md`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Downloaded');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('on'), 2200);
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+function toggleHistory() {
+  const p = document.getElementById('hist-panel');
+  if (p.classList.contains('on')) closeHistory();
+  else { p.classList.add('on'); document.getElementById('overlay').classList.add('on'); loadHistory(); }
+}
+
+function closeHistory() {
+  document.getElementById('hist-panel').classList.remove('on');
+  document.getElementById('overlay').classList.remove('on');
+}
+
+async function loadHistory() {
+  const list = document.getElementById('hist-list');
+  list.innerHTML = '<div class="hist-empty">Loading…</div>';
+  try {
+    const sessions = await (await fetch('/api/sessions')).json();
+    if (!sessions.length) { list.innerHTML='<div class="hist-empty">No sessions yet</div>'; return; }
+    const e = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    list.innerHTML = sessions.map(s => {
+      const d=new Date(s.created_at);
+      const dt=d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="hist-item" onclick="loadSession('${s.id}')">
+        <div class="hist-idea">${e(s.idea)}</div>
+        <div class="hist-meta">
+          <span>${s.id}</span>
+          <span class="hist-tag ${s.status}">${s.status}</span>
+          <span>${dt}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch { list.innerHTML='<div class="hist-empty">Failed to load</div>'; }
+}
+
+async function loadSession(sid) {
+  closeHistory();
+  try {
+    const {session,artifacts} = await (await fetch(`/api/session/${sid}`)).json();
+    clearError();
+    state.idea=session.idea; state.sessionId=session.id;
+    ROLES.forEach(r=>{ state.artifacts[r]=''; state.rawText[r]=''; });
+
+    document.getElementById('idea-input').value = session.idea;
+    ROLES.forEach(r=>{
+      const p=$panel(r); if(p) p.classList.remove('active','done');
+      setStatus(r,'WAITING');
+      const c=$content(r); if(c) c.innerHTML='';
+      setPipe(r,null);
+    });
+
+    const sid_el = document.getElementById('session-id');
+    sid_el.textContent=`SID ${session.id}`; sid_el.style.display='block';
+    setRunStatus('done','DONE');
+
+    for (const art of artifacts) {
+      if (!art.content) continue;
+      state.rawText[art.role]=art.content; state.artifacts[art.role]=art.content;
+      completePanel(art.role); setPipe(art.role,'done'); render(art.role);
+    }
+    if (artifacts.length) document.getElementById('bottom-bar').classList.add('open');
+    toast(`Session ${sid} loaded`);
+  } catch { toast('Failed to load session'); }
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.getElementById('idea-input').addEventListener('keydown', e => {
+  if (e.key==='Enter') { e.preventDefault(); startAnalysis(); }
+});
+
+// ── GitHub Push ───────────────────────────────────────────────────────────────
+function openGhModal() {
+  // Pre-fill token from localStorage if saved
+  const saved = JSON.parse(localStorage.getItem('pos_gh') || '{}');
+  if (saved.repo)  document.getElementById('gh-repo').value  = saved.repo;
+  if (saved.token) document.getElementById('gh-token').value = '●'.repeat(20);
+  document.getElementById('gh-progress').classList.remove('on');
+  document.getElementById('gh-push-btn').disabled = false;
+  document.getElementById('gh-modal-overlay').classList.add('on');
+}
+
+function closeGhModal(e) {
+  if (e && e.target !== document.getElementById('gh-modal-overlay')) return;
+  document.getElementById('gh-modal-overlay').classList.remove('on');
+}
+
+async function pushToGitHub() {
+  const repoInput  = document.getElementById('gh-repo').value.trim();
+  const tokenInput = document.getElementById('gh-token').value.trim();
+
+  // Resolve token (may be masked from saved value)
+  const saved = JSON.parse(localStorage.getItem('pos_gh') || '{}');
+  const token = tokenInput.startsWith('●') ? saved.token : tokenInput;
+  if (!token) { toast('Paste a GitHub token first'); return; }
+
+  // Parse owner/repo from URL
+  const match = repoInput.match(/github\.com[/:]([^/]+)\/([^/\s]+)/);
+  if (!match) { toast('Invalid GitHub URL'); return; }
+  const owner = match[1];
+  const repo  = match[2].replace(/\.git$/, '');
+
+  // Save for next time
+  localStorage.setItem('pos_gh', JSON.stringify({ repo: repoInput, token }));
+
+  const btn      = document.getElementById('gh-push-btn');
+  const progress = document.getElementById('gh-progress');
+  btn.disabled = true;
+  progress.classList.add('on');
+
+  const ARTIFACT_FILES = {
+    'pm':                 'PRD.md',
+    'system_architect':   'HLD.md',
+    'software_architect': 'LLD.md',
+    'launch_engineer':    'Plan.md',
+  };
+
+  let pushed = 0, failed = 0;
+  for (const [role, filename] of Object.entries(ARTIFACT_FILES)) {
+    const content = state.artifacts[role] || state.rawText[role];
+    if (!content) continue;
+
+    progress.textContent = `Pushing ${filename}…`;
+
+    try {
+      // Check if file exists (need SHA to update)
+      let sha = null;
+      const checkRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`,
+        { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } }
+      );
+      if (checkRes.ok) {
+        const existing = await checkRes.json();
+        sha = existing.sha;
+      }
+
+      const body = {
+        message: `Add ${filename} via ProductOS`,
+        content: btoa(unescape(encodeURIComponent(content))),
+      };
+      if (sha) body.sha = sha;
+
+      const pushRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${filename}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json',
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (pushRes.ok) pushed++;
+      else {
+        const err = await pushRes.json();
+        console.error(`Failed ${filename}:`, err.message);
+        failed++;
+      }
+    } catch (e) {
+      console.error(`Error pushing ${filename}:`, e);
+      failed++;
+    }
+  }
+
+  btn.disabled = false;
+  progress.classList.remove('on');
+
+  if (failed === 0) {
+    toast(`Pushed ${pushed} files to ${owner}/${repo}`);
+    closeGhModal();
+  } else {
+    toast(`${pushed} pushed, ${failed} failed — check token & repo name`);
+  }
+}
+
+// Init
+loadCfg();
+document.getElementById('idle-idea').focus();
+</script>
+</body>
+</html>
