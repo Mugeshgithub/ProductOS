@@ -37,3 +37,5 @@ productos_a6593de3*.md
 
 # Logs
 *.log
+.vercel
+.env*.local
